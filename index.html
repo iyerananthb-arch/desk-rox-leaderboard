@@ -154,7 +154,8 @@
 
         async function fetchBoard() {
             try {
-                const response = await fetch(sheetUrl);
+                // THE FIX: Cache-buster added to the URL and fetch options
+                const response = await fetch(sheetUrl + '&t=' + new Date().getTime(), { cache: 'no-store' });
                 const data = await response.text();
                 
                 // Parse CSV rows (skipping header)
@@ -226,10 +227,12 @@
 
             } catch (err) { 
                 console.error('Data error:', err); 
-                loader.innerHTML = `
-                    <i class="fa-solid fa-triangle-exclamation text-6xl text-red-500 mb-4"></i>
-                    <h2 class="font-anton text-2xl tracking-widest text-red-500 uppercase">Connection Failed</h2>
-                `;
+                if (initialLoad) {
+                    loader.innerHTML = `
+                        <i class="fa-solid fa-triangle-exclamation text-6xl text-red-500 mb-4"></i>
+                        <h2 class="font-anton text-2xl tracking-widest text-red-500 uppercase">Connection Failed</h2>
+                    `;
+                }
             }
         }
 
