@@ -48,21 +48,10 @@
                 #111111 40px
             );
         }
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #111111;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #333333;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #FFD700;
-        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #111111; }
+        ::-webkit-scrollbar-thumb { background: #333333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #FFD700; }
         
         .podium-1 { border-left: 6px solid #FFD700; background: linear-gradient(90deg, rgba(255,215,0,0.1) 0%, rgba(26,26,26,1) 30%); }
         .podium-2 { border-left: 6px solid #C0C0C0; background: linear-gradient(90deg, rgba(192,192,192,0.1) 0%, rgba(26,26,26,1) 30%); }
@@ -74,7 +63,6 @@
 
         .hidden { display: none !important; }
         
-        /* Loading Overlay */
         #loader {
             position: fixed;
             inset: 0;
@@ -90,16 +78,13 @@
 </head>
 <body class="min-h-screen flex flex-col selection:bg-hazardYellow selection:text-black relative">
 
-    <!-- Loading State -->
     <div id="loader">
         <i class="fa-solid fa-fire text-6xl text-hazardYellow mb-4 animate-pulse"></i>
         <h2 class="font-anton text-2xl tracking-widest uppercase text-white">Initializing Circuit...</h2>
     </div>
 
-    <!-- TOP HAZARD STRIPE HEADER -->
     <div class="h-4 hazard-stripes w-full shadow-lg z-10"></div>
 
-    <!-- MAIN HEADER -->
     <header class="bg-darkPanel border-b border-cardBorder py-6 px-6 md:px-12 flex flex-col sm:flex-row justify-between items-center gap-4 relative overflow-hidden">
         <div class="absolute -bottom-16 left-5 opacity-5 pointer-events-none text-9xl font-anton">
             <i class="fa-solid fa-fire"></i>
@@ -118,13 +103,9 @@
         </div>
     </header>
 
-    <!-- MAIN CONTENT -->
     <main class="flex-grow p-4 md:p-8 flex flex-col items-center">
         <div class="w-full max-w-6xl">
-            
-            <!-- PUBLIC DISPLAY VIEW -->
             <div id="publicView" class="w-full animate-fade-in">
-                
                 <div class="grid grid-cols-12 gap-4 text-gray-500 font-anton tracking-widest uppercase text-sm md:text-xl border-b-2 border-cardBorder pb-2 mb-4 px-4">
                     <div class="col-span-2 text-center">Rank</div>
                     <div class="col-span-6">Competitor Name</div>
@@ -144,21 +125,22 @@
     </main>
 
     <script>
-        // YOUR PUBLISHED GOOGLE SHEET CSV LINK
         const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT6UKb8cF8inZd93awvgggTffbdKAZf7GWCTbiXdH25mtpVPS60OCKAAYbKcYHOyTcckUzDP931VFsY/pub?output=csv';
 
         const loader = document.getElementById('loader');
         const leaderboardList = document.getElementById('leaderboardList');
         const emptyState = document.getElementById('emptyState');
+        
         let initialLoad = true;
+        let lastValidCount = 0; // Tracks the highest number of competitors seen
 
         async function fetchBoard() {
             try {
-                // THE FIX: Cache-buster added to the URL and fetch options
+                // Fetch with cache-buster
                 const response = await fetch(sheetUrl + '&t=' + new Date().getTime(), { cache: 'no-store' });
                 const data = await response.text();
                 
-                // Parse CSV rows (skipping header)
+                // Parse CSV rows
                 const rows = data.split('\n').slice(1);
                 let competitors = rows.map(r => {
                     const cols = r.split(',');
@@ -167,6 +149,15 @@
                         time: parseFloat(cols[1].trim()) 
                     } : null;
                 }).filter(p => p && !isNaN(p.time));
+
+                // THE FIX: If Google hands us an old file with fewer competitors, ignore it!
+                if (competitors.length < lastValidCount) {
+                    setTimeout(fetchBoard, 5000); // Try again in 5 seconds
+                    return; // Stop rendering
+                }
+                
+                // Update our memory with the highest count
+                lastValidCount = competitors.length;
 
                 // Sort ascending (lowest time wins)
                 competitors.sort((a, b) => a.time - b.time);
@@ -200,7 +191,7 @@
                         }
 
                         html += `
-                            <div class="${podiumClass} rounded p-4 md:p-6 flex items-center transition-all duration-300 shadow-md">
+                            <div class="${podiumClass} rounded p-4 md:p-6 flex items-center shadow-md">
                                 <div class="grid grid-cols-12 w-full items-center">
                                     <div class="col-span-2 text-center font-anton ${rankTextClass} tracking-widest text-2xl">
                                         ${rankIcon}
@@ -218,7 +209,6 @@
                     leaderboardList.innerHTML = html;
                 }
 
-                // Hide loader after first successful fetch
                 if(initialLoad) {
                     loader.style.opacity = '0';
                     setTimeout(() => loader.classList.add('hidden'), 500);
@@ -227,18 +217,14 @@
 
             } catch (err) { 
                 console.error('Data error:', err); 
-                if (initialLoad) {
-                    loader.innerHTML = `
-                        <i class="fa-solid fa-triangle-exclamation text-6xl text-red-500 mb-4"></i>
-                        <h2 class="font-anton text-2xl tracking-widest text-red-500 uppercase">Connection Failed</h2>
-                    `;
-                }
             }
+
+            // Call again after 5 seconds (using setTimeout prevents overlapping requests)
+            setTimeout(fetchBoard, 5000);
         }
 
-        // Fetch immediately, then every 5 seconds
+        // Start the first fetch
         fetchBoard();
-        setInterval(fetchBoard, 5000);
     </script>
 </body>
 </html>
