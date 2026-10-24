@@ -125,39 +125,30 @@
     </main>
 
     <script>
-        const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT6UKb8cF8inZd93awvgggTffbdKAZf7GWCTbiXdH25mtpVPS60OCKAAYbKcYHOyTcckUzDP931VFsY/pub?output=csv';
+        // Formatted Google Sheet CSV link for Direct Export
+        const sheetUrl = 'https://docs.google.com/spreadsheets/d/1lZysX-awKyUDVQEWFh75NjAA5pAA2_gZ0wBpRfPYTl8/export?format=csv';
 
         const loader = document.getElementById('loader');
         const leaderboardList = document.getElementById('leaderboardList');
         const emptyState = document.getElementById('emptyState');
-        
         let initialLoad = true;
-        let lastValidCount = 0; // Tracks the highest number of competitors seen
 
         async function fetchBoard() {
             try {
-                // Fetch with cache-buster
+                // The cache-buster guarantees Chrome always requests the live file directly from Google
                 const response = await fetch(sheetUrl + '&t=' + new Date().getTime(), { cache: 'no-store' });
                 const data = await response.text();
                 
                 // Parse CSV rows
                 const rows = data.split('\n').slice(1);
                 let competitors = rows.map(r => {
+                    // Handle potential quotes and commas safely
                     const cols = r.split(',');
                     return cols.length >= 2 ? { 
-                        name: cols[0].trim(), 
-                        time: parseFloat(cols[1].trim()) 
+                        name: cols[0].replace(/"/g, '').trim(), 
+                        time: parseFloat(cols[1].replace(/"/g, '').trim()) 
                     } : null;
                 }).filter(p => p && !isNaN(p.time));
-
-                // THE FIX: If Google hands us an old file with fewer competitors, ignore it!
-                if (competitors.length < lastValidCount) {
-                    setTimeout(fetchBoard, 5000); // Try again in 5 seconds
-                    return; // Stop rendering
-                }
-                
-                // Update our memory with the highest count
-                lastValidCount = competitors.length;
 
                 // Sort ascending (lowest time wins)
                 competitors.sort((a, b) => a.time - b.time);
@@ -191,7 +182,7 @@
                         }
 
                         html += `
-                            <div class="${podiumClass} rounded p-4 md:p-6 flex items-center shadow-md">
+                            <div class="${podiumClass} rounded p-4 md:p-6 flex items-center shadow-md transition-all duration-300">
                                 <div class="grid grid-cols-12 w-full items-center">
                                     <div class="col-span-2 text-center font-anton ${rankTextClass} tracking-widest text-2xl">
                                         ${rankIcon}
@@ -219,11 +210,11 @@
                 console.error('Data error:', err); 
             }
 
-            // Call again after 5 seconds (using setTimeout prevents overlapping requests)
+            // Ensures a clean 5-second interval without overlapping data requests
             setTimeout(fetchBoard, 5000);
         }
 
-        // Start the first fetch
+        // Start the engine
         fetchBoard();
     </script>
 </body>
