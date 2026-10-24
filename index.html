@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DESK-ROX // Live Circuit Leaderboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & Anton for industrial headings -->
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        hazardYellow: '#FFD700',
+                        hazardBlack: '#111111',
+                        darkPanel: '#1A1A1A',
+                        cardBorder: '#333333',
+                        gold: '#FFD700',
+                        silver: '#C0C0C0',
+                        bronze: '#CD7F32'
+                    },
+                    fontFamily: {
+                        anton: ['Anton', 'sans-serif'],
+                        inter: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d0d0d;
+            color: #f3f4f6;
+            overflow-x: hidden;
+        }
+        .hazard-stripes {
+            background: repeating-linear-gradient(
+                -45deg,
+                #FFD700,
+                #FFD700 20px,
+                #111111 20px,
+                #111111 40px
+            );
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111111;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333333;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #FFD700;
+        }
+        
+        .podium-1 { border-left: 6px solid #FFD700; background: linear-gradient(90deg, rgba(255,215,0,0.1) 0%, rgba(26,26,26,1) 30%); }
+        .podium-2 { border-left: 6px solid #C0C0C0; background: linear-gradient(90deg, rgba(192,192,192,0.1) 0%, rgba(26,26,26,1) 30%); }
+        .podium-3 { border-left: 6px solid #CD7F32; background: linear-gradient(90deg, rgba(205,127,50,0.1) 0%, rgba(26,26,26,1) 30%); }
+        
+        .text-gold { color: #FFD700; text-shadow: 0 0 10px rgba(255,215,0,0.3); }
+        .text-silver { color: #C0C0C0; text-shadow: 0 0 10px rgba(192,192,192,0.3); }
+        .text-bronze { color: #CD7F32; text-shadow: 0 0 10px rgba(205,127,50,0.3); }
+
+        .hidden { display: none !important; }
+        
+        /* Loading Overlay */
+        #loader {
+            position: fixed;
+            inset: 0;
+            background: rgba(13, 13, 13, 0.95);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            transition: opacity 0.5s ease;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-hazardYellow selection:text-black relative">
+
+    <!-- Loading State -->
+    <div id="loader">
+        <i class="fa-solid fa-fire text-6xl text-hazardYellow mb-4 animate-pulse"></i>
+        <h2 class="font-anton text-2xl tracking-widest uppercase text-white">Initializing Circuit...</h2>
+    </div>
+
+    <!-- TOP HAZARD STRIPE HEADER -->
+    <div class="h-4 hazard-stripes w-full shadow-lg z-10"></div>
+
+    <!-- MAIN HEADER -->
+    <header class="bg-darkPanel border-b border-cardBorder py-6 px-6 md:px-12 flex flex-col sm:flex-row justify-between items-center gap-4 relative overflow-hidden">
+        <div class="absolute -bottom-16 left-5 opacity-5 pointer-events-none text-9xl font-anton">
+            <i class="fa-solid fa-fire"></i>
+        </div>
+        
+        <div class="flex items-center gap-4 z-10 w-full justify-center md:justify-start">
+            <div class="bg-hazardYellow text-black font-anton px-4 py-2 text-2xl md:text-3xl tracking-wider rounded skew-x-[-6deg] shadow-lg border-2 border-black">
+                FINAL 5
+            </div>
+            <div>
+                <h1 class="text-3xl md:text-5xl font-anton tracking-widest uppercase text-white drop-shadow-md">
+                    DESK-ROX <span class="text-hazardYellow ml-2">CIRCUIT</span>
+                </h1>
+                <p class="text-xs md:text-sm text-gray-400 tracking-widest uppercase mt-1">Official JIOADS Tournament Leaderboard</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-grow p-4 md:p-8 flex flex-col items-center">
+        <div class="w-full max-w-6xl">
+            
+            <!-- PUBLIC DISPLAY VIEW -->
+            <div id="publicView" class="w-full animate-fade-in">
+                
+                <div class="grid grid-cols-12 gap-4 text-gray-500 font-anton tracking-widest uppercase text-sm md:text-xl border-b-2 border-cardBorder pb-2 mb-4 px-4">
+                    <div class="col-span-2 text-center">Rank</div>
+                    <div class="col-span-6">Competitor Name</div>
+                    <div class="col-span-4 text-right">Total Time (Sec)</div>
+                </div>
+
+                <div id="leaderboardList" class="flex flex-col gap-3">
+                    <!-- Leaderboard Rows Injected Here -->
+                </div>
+                
+                <div id="emptyState" class="hidden text-center py-20 text-gray-600 font-anton text-2xl tracking-widest uppercase">
+                    <i class="fa-solid fa-hourglass-empty mb-4 text-4xl"></i><br>
+                    Awaiting Circuit Finishers
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // YOUR PUBLISHED GOOGLE SHEET CSV LINK
+        const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT6UKb8cF8inZd93awvgggTffbdKAZf7GWCTbiXdH25mtpVPS60OCKAAYbKcYHOyTcckUzDP931VFsY/pub?output=csv';
+
+        const loader = document.getElementById('loader');
+        const leaderboardList = document.getElementById('leaderboardList');
+        const emptyState = document.getElementById('emptyState');
+        let initialLoad = true;
+
+        async function fetchBoard() {
+            try {
+                const response = await fetch(sheetUrl);
+                const data = await response.text();
+                
+                // Parse CSV rows (skipping header)
+                const rows = data.split('\n').slice(1);
+                let competitors = rows.map(r => {
+                    const cols = r.split(',');
+                    return cols.length >= 2 ? { 
+                        name: cols[0].trim(), 
+                        time: parseFloat(cols[1].trim()) 
+                    } : null;
+                }).filter(p => p && !isNaN(p.time));
+
+                // Sort ascending (lowest time wins)
+                competitors.sort((a, b) => a.time - b.time);
+
+                // Render UI
+                if (competitors.length === 0) {
+                    emptyState.classList.remove('hidden');
+                    leaderboardList.innerHTML = '';
+                } else {
+                    emptyState.classList.add('hidden');
+                    let html = '';
+                    
+                    competitors.forEach((comp, index) => {
+                        const rank = index + 1;
+                        let podiumClass = 'bg-darkPanel border border-cardBorder';
+                        let rankTextClass = 'text-gray-500';
+                        let rankIcon = rank;
+
+                        if (rank === 1) {
+                            podiumClass = 'podium-1';
+                            rankTextClass = 'text-gold text-4xl';
+                            rankIcon = '<i class="fa-solid fa-trophy"></i>';
+                        } else if (rank === 2) {
+                            podiumClass = 'podium-2';
+                            rankTextClass = 'text-silver text-3xl';
+                            rankIcon = '<i class="fa-solid fa-medal"></i>';
+                        } else if (rank === 3) {
+                            podiumClass = 'podium-3';
+                            rankTextClass = 'text-bronze text-3xl';
+                            rankIcon = '<i class="fa-solid fa-medal"></i>';
+                        }
+
+                        html += `
+                            <div class="${podiumClass} rounded p-4 md:p-6 flex items-center transition-all duration-300 shadow-md">
+                                <div class="grid grid-cols-12 w-full items-center">
+                                    <div class="col-span-2 text-center font-anton ${rankTextClass} tracking-widest text-2xl">
+                                        ${rankIcon}
+                                    </div>
+                                    <div class="col-span-6 font-bold text-xl md:text-3xl tracking-wide text-white uppercase break-words">
+                                        ${comp.name}
+                                    </div>
+                                    <div class="col-span-4 text-right font-anton text-2xl md:text-4xl text-hazardYellow tracking-widest">
+                                        ${comp.time.toFixed(2)}<span class="text-sm md:text-xl text-gray-500 ml-1">s</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    leaderboardList.innerHTML = html;
+                }
+
+                // Hide loader after first successful fetch
+                if(initialLoad) {
+                    loader.style.opacity = '0';
+                    setTimeout(() => loader.classList.add('hidden'), 500);
+                    initialLoad = false;
+                }
+
+            } catch (err) { 
+                console.error('Data error:', err); 
+                loader.innerHTML = `
+                    <i class="fa-solid fa-triangle-exclamation text-6xl text-red-500 mb-4"></i>
+                    <h2 class="font-anton text-2xl tracking-widest text-red-500 uppercase">Connection Failed</h2>
+                `;
+            }
+        }
+
+        // Fetch immediately, then every 5 seconds
+        fetchBoard();
+        setInterval(fetchBoard, 5000);
+    </script>
+</body>
+</html>
